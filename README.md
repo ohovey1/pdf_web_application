@@ -121,22 +121,41 @@ Using the Django framework, these are the main components of the project and the
 
 ## Demo:
 
+**Homescreen:**
+
+![Alt text](IR_Proj_3/images/image1.png)
+
+**Positional Index for query 'is':**
+
+![Alt text](IR_Proj_3/images/image2.png)
+
+**PDF Functionality and Visualization:**
+
+![Alt text](IR_Proj_3/images/image3.png)
+![Alt text](IR_Proj_3/images/image4.png)
+
+**Text File Query:** 
+
+![Alt text](IR_Proj_3/images/image5.png)
+![Alt text](IR_Proj_3/images/image6.png)
+
+Database Functionality:
+
+![Alt text](IR_Proj_3/images/image7.png)
 
 ## Performance Metrics Evaluated
 
-The following metrics were crucial in assessing the system's performance:
+**Response Time:** When constructing our application, we considered the time taken to return search results after a query is submitted, an element which is crucial for user satisfaction.
 
-Response Time: When constructing our application, we considered the time taken to return search results after a query is submitted, an element which is crucial for user satisfaction.
-
-Resource Utilization: When running the application, we monitored the usage of system resources like CPU, memory, and disk I/O during normal operation and peak loads in an effort to gauge the viability of the application in this regard.
+**Resource Utilization:** When running the application, we monitored the usage of system resources like CPU, memory, and disk I/O during normal operation and peak loads in an effort to gauge the viability of the application in this regard.
 
 ## Future Work:
 
-Scalability Plans: How can the system be scaled to handle more simultaneous users or massive files?
+**Scalability Plans:** How can the system be scaled to handle more simultaneous users or massive files?
 
-Feature Extensions:  New features such as advanced search options, integration with other data sources, or improvements in user interface design.
+**Feature Extensions:**  New features such as advanced search options, integration with other data sources, or improvements in user interface design.
 
-Security Enhancements: Additional security measures like implementing OAuth for user authentication or encryption more data elements.
+**Security Enhancements:** Additional security measures like implementing OAuth for user authentication or encryption more data elements.
 
 Technology Upgrades: Looking forward to integrating newer technologies or frameworks that could improve system performance or user experience like react , Node.js and servers to handle large data load.
 
