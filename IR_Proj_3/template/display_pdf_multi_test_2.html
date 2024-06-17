@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Embedded PDF Viewer</title>
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'styles_3.css' %}">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+    }
+
+    #pdf-container {
+      width: 100%;
+      height: auto;
+      position: relative; /* Ensure relative positioning for absolute positioning of highlights */
+    }
+
+    canvas {
+      display: block;
+      margin: auto;
+      border: 1px solid black;
+    }
+  </style>
+</head>
+<body>
+  <div>
+    <h1>Document {{ document }}</h1>
+    <h3>Query: {{ query }}</h3>
+    <h3>Total Query Occurrences: {{ count }}</h3>
+    <h3>Positions (Indexing from 0): {{ positions_json }}</h3> 
+    <a href="javascript:history.back()">Go Back to the Search Results</a>
+  </div>
+  <div>&nbsp;</div>
+
+  <div id="pdf-container"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
+  <script>
+    var pdfBase64 = "{{ pdf_content }}"; // Replace with the base64-encoded PDF content
+    var searchQuery = "\\b{{ query }}\\b"; // Regex pattern to match the query as a standalone word
+
+    // Convert base64 string to Uint8Array
+    var pdfData = atob(pdfBase64);
+    var pdfDataArray = new Uint8Array(pdfData.length);
+    for (var i = 0; i < pdfData.length; i++) {
+      pdfDataArray[i] = pdfData.charCodeAt(i);
+    }
+
+    // Load the PDF document
+    pdfjsLib.getDocument({ data: pdfDataArray }).promise.then(function(pdf) {
+      var pdfContainer = document.getElementById('pdf-container');
+      
+      // Iterate through each page of the PDF
+      for (var pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+        pdf.getPage(pageNumber).then(function(page) {
+          var scale = 1.5;
+          var viewport = page.getViewport({ scale: scale });
+
+          // Create canvas element to render the PDF page
+          var canvas = document.createElement('canvas');
+          var context = canvas.getContext('2d');
+          canvas.height = viewport.height;
+          canvas.width = viewport.width;
+
+          // Render PDF page into canvas context
+          var renderContext = {
+            canvasContext: context,
+            viewport: viewport
+          };
+          page.render(renderContext).promise.then(function() {
+            // Perform text analysis directly on the canvas
+            var imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+            var textData = analyzeText(imageData); // Function to perform text analysis
+
+            // Iterate through the text data and highlight matching text
+            textData.forEach(function(textItem) {
+              var text = textItem.text;
+              var match;
+              var regex = new RegExp(searchQuery, 'gi');
+              while ((match = regex.exec(text)) !== null) {
+                var matchIndex = match.index;
+                var x = textItem.x + (matchIndex * textItem.width);
+                var y = textItem.y;
+                var width = context.measureText(match[0]).width * scale;
+                var height = textItem.height;
+                
+                // Highlight the area where the text matches the query
+                context.fillStyle = 'rgba(255, 255, 0, 0.5)'; // Yellow highlight with opacity
+                context.fillRect(x, y - height, width, height);
+              }
+            });
+
+            // Append canvas to the PDF container
+            pdfContainer.appendChild(canvas);
+          });
+        });
+      }
+    });
+
+    // Function to perform text analysis on canvas
+    function analyzeText(imageData) {
+      // Implement text analysis algorithm here
+      // This function should return an array of text items with their positions
+      // Each text item should have properties like text, x, y, width, height
+      // For demonstration purposes, I'll return an empty array
+      return [];
+    }
+  </script>
+</body>
+</html>

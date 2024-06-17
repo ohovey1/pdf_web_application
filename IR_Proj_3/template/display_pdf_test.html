@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Embedded PDF Viewer</title>
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'styles_3.css' %}">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+    }
+
+    #pdf-container {
+      width: 100%;
+      height: 100vh;
+    }
+
+    #pdf-viewer {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+  </style>
+</head>
+<body>
+  <div>
+    <h1>Document {{ document }}</h1>
+    <h3>Query: {{ query }}</h3>
+    <h3>Total Query Occurrences: {{ count }}</h3>
+    <h3>Positions (Indexing from 0): {{ positions_json }}</h3> 
+    <a href="javascript:history.back()">Go Back to the Search Results</a>
+  </div>
+  <div>&nbsp;</div>
+
+  <div id="pdf-container">
+    <iframe id="pdf-viewer" frameborder="0"></iframe>
+  </div>
+
+  <script>
+    var pdfBase64 = "{{ pdf_content }}"; // Retrieve the base64-encoded PDF content
+    var pdfViewer = document.getElementById('pdf-viewer');
+
+    // Convert the base64-encoded PDF content to a Blob object
+    var pdfBlob = b64toBlob(pdfBase64, 'application/pdf');
+
+    // Create a URL for the Blob object
+    var pdfUrl = URL.createObjectURL(pdfBlob);
+
+    // Set the URL as the src for the iframe
+    pdfViewer.src = pdfUrl;
+
+    // Function to convert base64 to Blob
+    function b64toBlob(b64Data, contentType='', sliceSize=512) {
+      var byteCharacters = atob(b64Data);
+      var byteArrays = [];
+
+      for (var offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+        var slice = byteCharacters.slice(offset, offset + sliceSize);
+
+        var byteNumbers = new Array(slice.length);
+        for (var i = 0; i < slice.length; i++) {
+          byteNumbers[i] = slice.charCodeAt(i);
+        }
+
+        var byteArray = new Uint8Array(byteNumbers);
+
+        byteArrays.push(byteArray);
+      }
+
+      var blob = new Blob(byteArrays, {type: contentType});
+      return blob;
+    }
+
+    pdfViewer.onload = function() {
+      var iframeDocument = pdfViewer.contentDocument || pdfViewer.contentWindow.document;
+      var searchText = "{{ query }}"; // Replace with the text you want to highlight
+
+      // Iterate through each text item in the text layer
+      iframeDocument.querySelectorAll('.textLayer > div').forEach(function(textItem) {
+        // Get the text content of the text item and trim whitespace
+        var text = textItem.textContent.trim();
+        
+        // Check if the text content contains the search term (case insensitive)
+        if (text.toLowerCase().includes(searchText.toLowerCase())) {
+          // Create a <mark> element to highlight the text
+          var highlight = document.createElement('mark');
+          highlight.textContent = text; // Set the text content of the highlight
+          highlight.style.backgroundColor = 'yellow'; // Set the background color to yellow
+          
+          // Clear the original text and append the highlight
+          textItem.innerHTML = ''; // Clear the original text
+          textItem.appendChild(highlight); // Append the highlight to the text item
+        }
+      });
+    };
+  </script>
+</body>
+</html>

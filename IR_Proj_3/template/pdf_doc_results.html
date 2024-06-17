@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Embedded PDF Viewer</title>
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'styles_3.css' %}">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+    }
+
+    #pdf-container {
+      width: 100%;
+      height: auto;
+      position: relative; /* Ensure relative positioning for absolute positioning of highlights */
+    }
+
+    canvas {
+      display: block;
+      margin: auto;
+      border: 1px solid black;
+    }
+  </style>
+</head>
+<body>
+  <div>
+    <h1>Document {{ document }}</h1>
+    <h3>Query: {{ query }}</h3>
+    <h3>Total Query Occurrences: {{ count }}</h3>
+    <h3>Positions (Indexing from 0): {{ positions_json }}</h3> 
+    <a href="javascript:history.back()">Go Back to the Search Results</a>
+  </div>
+  <div>&nbsp;</div>
+  <div>&nbsp;</div>
+  <div>
+      <ul>
+          {% for query in queries %}
+              <li><a href="{% url 'display_doc' query %}">Render: {{ query }}</a></li>
+          {% endfor %}
+      </ul>
+  </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <div id="pdf-container"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
+  <script>
+    var pdfBase64 = "{{ pdf_content }}"; // Replace with the base64-encoded PDF content
+    var searchQuery = "\\b{{ query }}\\b"; // Regex pattern to match the query as a standalone word
+
+    // Convert base64 string to Uint8Array
+    var pdfData = atob(pdfBase64);
+    var pdfDataArray = new Uint8Array(pdfData.length);
+    for (var i = 0; i < pdfData.length; i++) {
+      pdfDataArray[i] = pdfData.charCodeAt(i);
+    }
+
+    // Load the PDF document
+    pdfjsLib.getDocument({ data: pdfDataArray }).promise.then(function(pdf) {
+      var pdfContainer = document.getElementById('pdf-container');
+      
+      // Iterate through each page of the PDF
+      for (var pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+        pdf.getPage(pageNumber).then(function(page) {
+          var scale = 1.5;
+          var viewport = page.getViewport({ scale: scale });
+
+          // Create canvas element to render the PDF page
+          var canvas = document.createElement('canvas');
+          var context = canvas.getContext('2d');
+          canvas.height = viewport.height;
+          canvas.width = viewport.width;
+
+          // Render PDF page into canvas context
+          var renderContext = {
+            canvasContext: context,
+            viewport: viewport
+          };
+          page.render(renderContext).promise.then(function() {
+            // Extract text content from the page
+            page.getTextContent().then(function(textContent) {
+              // Iterate through each text item
+              textContent.items.forEach(function(textItem) {
+                var text = textItem.str;
+                // Construct regex pattern to match the query as a standalone word
+                var regex = new RegExp(searchQuery, 'gi');
+                var match;
+                while ((match = regex.exec(text)) !== null) {
+                  var matchIndex = match.index;
+                  // Check if the match is standalone (surrounded by whitespace or boundary characters)
+                  if ((matchIndex === 0 || /\s/.test(text.charAt(matchIndex - 1))) &&
+                      (matchIndex + match[0].length === text.length || /\s/.test(text.charAt(matchIndex + match[0].length)))) {
+                    // Adjust the position of the highlight based on the scale and transformation
+                    var x = (textItem.transform[4] * scale) + context.measureText(text.substring(0, matchIndex)).width;
+                    var y = (viewport.height - (textItem.transform[5] * scale));
+                    var width = context.measureText(match[0]).width * scale;
+                    var height = textItem.height * scale;
+                    
+                    // Highlight the area where the text matches the query
+                    context.fillStyle = 'rgba(255, 255, 0, 0.5)'; // Yellow highlight with opacity
+                    context.fillRect(x, y - height, width, height);
+                  }
+                }
+              });
+            });
+          });
+          pdfContainer.appendChild(canvas);
+        });
+      }
+    });
+  </script>
+</body>
+</html>
